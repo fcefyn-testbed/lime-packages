@@ -62,3 +62,5 @@ define Package/$(PKG_NAME)/postinst
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
+
+# CI evidence: triggered by demo PR
