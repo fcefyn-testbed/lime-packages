@@ -75,6 +75,9 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: tools/ci/prepare_matrix.sh
 
+  check-trusted-author:
+    uses: ./.github/workflows/check-trusted-author.yml
+
   build-feed:
     runs-on: ubuntu-latest
     needs: prepare-matrix
@@ -479,7 +482,7 @@ jobs:
   # pull_request (one random place; gated by the physical-lab environment).
   test-firmware:
     name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
-    needs: [prepare-matrix, build-image]
+    needs: [prepare-matrix, build-image, check-trusted-author]
     if: |
       (
         github.event_name == 'schedule'
@@ -487,10 +490,8 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
-    # `workflow_dispatch` and PRs from outside the org gate on `physical-lab`.
-    # Org members (MEMBER/OWNER/COLLABORATOR) and `schedule` run unattended.
     environment:
-      name: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.author_association != 'MEMBER' && github.event.pull_request.author_association != 'OWNER' && github.event.pull_request.author_association != 'COLLABORATOR')) && 'physical-lab' || '' }}
+      name: ${{ needs.check-trusted-author.outputs.trusted != 'true' && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
@@ -716,16 +717,15 @@ jobs:
     name: test-mesh (N=${{ github.event.inputs.physical_mesh_count || '3 (PR)' }} / ${{ matrix.openwrt_release }})
     # Serialise after test-firmware: both jobs reserve the same places,
     # and running them in parallel races on the labgrid lock.
-    needs: [prepare-matrix, build-image, test-firmware]
+    needs: [prepare-matrix, build-image, test-firmware, check-trusted-author]
     if: |
       (
         (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_count != '0')
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.mesh_test_matrix).include[0] != null
-    # Same gate logic as test-firmware: org members run unattended.
     environment:
-      name: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.author_association != 'MEMBER' && github.event.pull_request.author_association != 'OWNER' && github.event.pull_request.author_association != 'COLLABORATOR')) && 'physical-lab' || '' }}
+      name: ${{ needs.check-trusted-author.outputs.trusted != 'true' && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
