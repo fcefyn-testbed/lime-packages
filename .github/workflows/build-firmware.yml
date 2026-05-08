@@ -487,11 +487,10 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
-    # `workflow_dispatch` and `pull_request` gate on the `physical-lab`
-    # environment (configured with required reviewers in Settings).
-    # `schedule` skips the gate so the daily cron is unattended.
+    # `workflow_dispatch` and PRs from outside the org gate on `physical-lab`.
+    # Org members (MEMBER/OWNER/COLLABORATOR) and `schedule` run unattended.
     environment:
-      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
+      name: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.author_association != 'MEMBER' && github.event.pull_request.author_association != 'OWNER' && github.event.pull_request.author_association != 'COLLABORATOR')) && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
@@ -724,8 +723,9 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.mesh_test_matrix).include[0] != null
+    # Same gate logic as test-firmware: org members run unattended.
     environment:
-      name: physical-lab
+      name: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.author_association != 'MEMBER' && github.event.pull_request.author_association != 'OWNER' && github.event.pull_request.author_association != 'COLLABORATOR')) && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
