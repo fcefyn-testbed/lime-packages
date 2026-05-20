@@ -619,14 +619,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: "[DEMO] Force failure to trigger issue creation"
-        if: always() && env.LG_PLACE != ''
-        run: |
-          echo "::error::Demo failure: this step intentionally fails to demonstrate the issue-creation feature."
-          exit 1
-
       - name: Open or close issue on test result
-        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        if: always() && github.event_name == 'schedule'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
