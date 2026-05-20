@@ -5,18 +5,68 @@ on:
     branches: [ '**' ]
   pull_request:
     branches: [ '**' ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   unittests:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
 
-      - name: run tests
+      - name: Run tests
         run: ./run_tests
-      - name: coverage
+
+      - name: Generate JUnit report
+        if: always()
+        run: |
+          set -euo pipefail
+          LIB_PATHS='tests/fakes/?.lua;packages/safe-upgrade/files/usr/sbin/?'
+          for pkg in packages/*/files/usr/lib/lua/; do
+            LIB_PATHS="$LIB_PATHS;$pkg?.lua"
+          done
+          LIB_PATHS="$LIB_PATHS;;"
+
+          docker run --rm \
+            -e LUA_DISABLE_LOGGING=1 \
+            -v "$PWD:/src" -w /src \
+            libremesh/luatest:1.2 \
+            bash -c "LUA_PATH='$LIB_PATHS' busted --output junit \
+              packages/*/tests/test*.lua tests/test*.lua \
+              --lpath='$LIB_PATHS'" > unit-report.xml || true
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-unit
+          path: unit-report.xml
+          retention-days: 14
+
+      - name: Publish to testbed-utils
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/fcefyn_testbed_utils
+          token: ${{ secrets.TESTBED_UTILS_TOKEN }}
+          ref: develop
+          path: testbed-utils
+
+      - name: Copy unit results
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          mkdir -p testbed-utils/docs/ci-results/results/unit
+          cp unit-report.xml testbed-utils/docs/ci-results/results/unit/report.xml
+
+      - name: Commit and push unit results
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          cd testbed-utils
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ci-results/results/unit/
+          git diff --staged --quiet && echo "No changes" && exit 0
+          git commit -m "ci: update unit test results (lime-packages@${{ github.sha }})"
+          git push
+
+      - name: Coverage
         run: bash <(curl -s https://codecov.io/bash)

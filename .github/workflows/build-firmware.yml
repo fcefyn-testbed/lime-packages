@@ -1109,6 +1109,72 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  publish-results:
+    name: Publish test results to testbed-utils
+    runs-on: ubuntu-latest
+    needs: [test-firmware, test-firmware-qemu-single, test-mesh-qemu]
+    if: always() && github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/fcefyn_testbed_utils
+          token: ${{ secrets.TESTBED_UTILS_TOKEN }}
+          ref: develop
+          path: testbed-utils
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: artifacts
+          merge-multiple: false
+
+      - name: Organize results
+        run: |
+          set -euo pipefail
+          BASE="testbed-utils/docs/ci-results/results"
+
+          for dir in artifacts/test-results-*/; do
+            name="${dir#artifacts/test-results-}"
+            name="${name%/}"
+            report="$dir/report.xml"
+            [[ -f "$report" ]] || continue
+
+            if [[ "$name" == qemu-single-* ]]; then
+              key="${name#qemu-single-}"
+              dest="$BASE/qemu-single/$key"
+            elif [[ "$name" == qemu-mesh-* ]]; then
+              key="${name#qemu-mesh-}"
+              dest="$BASE/qemu-mesh/$key"
+            else
+              dest="$BASE/physical/$name"
+            fi
+
+            mkdir -p "$dest"
+            cp "$report" "$dest/report.xml"
+            echo "Copied: $dest/report.xml"
+          done
+
+      - name: Update last_updated in devices.json
+        run: |
+          python3 - <<'EOF'
+          import json, datetime, pathlib
+          p = pathlib.Path("testbed-utils/docs/ci-results/results/devices.json")
+          data = json.loads(p.read_text())
+          data["last_updated"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+          p.write_text(json.dumps(data, indent=2) + "\n")
+          EOF
+
+      - name: Commit and push
+        run: |
+          cd testbed-utils
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ci-results/results/
+          git diff --staged --quiet && echo "No changes to publish" && exit 0
+          git commit -m "ci: update test results from run ${{ github.run_id }}"
+          git push
+
   summary:
     runs-on: ubuntu-latest
     if: always()
