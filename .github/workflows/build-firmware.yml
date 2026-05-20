@@ -494,6 +494,8 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
+    permissions:
+      issues: write
     environment:
       name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
@@ -617,8 +619,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: "[DEMO] Force failure to trigger issue creation"
+        if: always() && env.LG_PLACE != ''
+        run: |
+          echo "::error::Demo failure: this step intentionally fails to demonstrate the issue-creation feature."
+          exit 1
+
       - name: Open or close issue on test result
-        if: always() && github.event_name == 'schedule'
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
