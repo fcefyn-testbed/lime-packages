@@ -570,6 +570,10 @@ jobs:
           LG_PLACE: ${{ env.LG_PLACE }}
           LG_ENV: ${{ env.LG_ENV }}
           LG_MESH_UBOOT_INTERRUPT_SPAM_SEC: ${{ matrix.uboot_interrupt_spam_sec }}
+          # pytest_sessionfinish in conftest.py writes lime-report.sh output here
+          # using the already-connected SSHDriver (avoids the PTY issue with
+          # `labgrid-client ssh` when stdout is redirected).
+          LIME_REPORT_OUTPUT: ${{ github.workspace }}/lime-report-${{ matrix.place }}.md
         run: |
           set -euo pipefail
           LOG_DIR="$GITHUB_WORKSPACE/logs/${{ matrix.place }}-${{ matrix.openwrt_release }}"
@@ -580,39 +584,20 @@ jobs:
             --lg-colored-steps \
             --log-cli-level=CONSOLE
 
-      - name: Collect lime-report from DUT
+      - name: Check lime-report collection
         id: lime-report
         if: always() && env.LG_PLACE != ''
-        working-directory: libremesh-tests
-        env:
-          LG_PROXY: labgrid-fcefyn
-          LG_PLACE: ${{ env.LG_PLACE }}
-          LG_ENV: ${{ env.LG_ENV }}
         run: |
-          set +e
-          # lime-report.sh in this feed has no -m flag (PR #1242 not merged here);
-          # default invocation prints markdown-style sections (### FILE/CMD).
           REPORT_FILE="$GITHUB_WORKSPACE/lime-report-${{ matrix.place }}.md"
-          LG_ERR="$(mktemp)"
-          uv run labgrid-client -p "$LG_PLACE" ssh -- lime-report.sh > "$REPORT_FILE" 2>"$LG_ERR"
-          LG_RC=$?
-          if [ "$LG_RC" -ne 0 ] || [ ! -s "$REPORT_FILE" ]; then
-            {
-              echo "_Could not collect lime-report (labgrid-client exit ${LG_RC})._"
-              echo ""
-              echo '```'
-              head -c 8000 "$LG_ERR"
-              echo '```'
-            } > "$REPORT_FILE"
+          if [ -s "$REPORT_FILE" ]; then
+            echo "lime-report bytes: $(wc -c < "$REPORT_FILE")"
+            echo '### lime-report preview' >> "$GITHUB_STEP_SUMMARY"
+            head -n 30 "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
           else
-            TMP="$(mktemp)"
-            head -c 50000 "$REPORT_FILE" > "$TMP"
-            mv "$TMP" "$REPORT_FILE"
+            echo "_lime-report was not collected by pytest_sessionfinish (file missing or empty)._" \
+              > "$REPORT_FILE"
+            echo "::warning::lime-report not collected for ${{ matrix.place }}"
           fi
-          rm -f "$LG_ERR"
-          echo "lime-report bytes: $(wc -c < "$REPORT_FILE")"
-          echo '### lime-report preview' >> "$GITHUB_STEP_SUMMARY"
-          head -n 25 "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
           echo "collected=true" >> "$GITHUB_OUTPUT"
 
       - name: Poweroff and unlock device
