@@ -567,12 +567,6 @@ jobs:
           echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
           echo "Locked $PLACE for device=${{ matrix.device }}"
 
-      - name: "[DEMO] Intentional failure to generate healthcheck issues"
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.demo_fail == 'true'
-        run: |
-          echo "::error::Intentional failure to trigger healthcheck issue creation (demo run)"
-          exit 1
-
       - name: Run single-node LibreMesh tests
         working-directory: libremesh-tests
         env:
@@ -610,6 +604,12 @@ jobs:
             echo "::warning::lime-report not collected for ${{ matrix.place }}"
           fi
           echo "collected=true" >> "$GITHUB_OUTPUT"
+
+      - name: "[DEMO] Intentional failure after lime-report collection"
+        if: always() && env.LG_PLACE != '' && github.event_name == 'workflow_dispatch' && github.event.inputs.demo_fail == 'true'
+        run: |
+          echo "::error::Intentional failure for healthcheck issue demo (lime-report already collected above)"
+          exit 1
 
       - name: Poweroff and unlock device
         if: always()
