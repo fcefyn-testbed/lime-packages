@@ -522,7 +522,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: fcefyn-testbed/libremesh-tests
-          ref: staging
+          ref: main
           path: libremesh-tests
 
       - uses: actions/checkout@v6
@@ -767,7 +767,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: fcefyn-testbed/libremesh-tests
-          ref: staging
+          ref: main
           path: libremesh-tests
 
       - uses: actions/checkout@v6
@@ -870,7 +870,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: fcefyn-testbed/libremesh-tests
-          ref: staging
+          ref: main
           path: libremesh-tests
 
       - uses: actions/checkout@v6
@@ -951,7 +951,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: fcefyn-testbed/libremesh-tests
-          ref: staging
+          ref: main
           path: libremesh-tests
 
       - uses: actions/checkout@v6
@@ -1056,7 +1056,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: fcefyn-testbed/libremesh-tests
-          ref: staging
+          ref: main
           path: libremesh-tests
 
       - uses: actions/checkout@v6
