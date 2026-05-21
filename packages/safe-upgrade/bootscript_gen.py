@@ -24,8 +24,10 @@ bootm ${fw1_addr};
 
 def onelinerize(data):
     import re
+
     # remove comments
-    data = re.sub(r'#.*', '', data)
+    data = re.sub(r"#.*", "", data)
     return data.replace("\n", " ").replace("    ", "").replace("  ", " ").strip()
+
 
 print("set bootcmd '%s'" % onelinerize(script))

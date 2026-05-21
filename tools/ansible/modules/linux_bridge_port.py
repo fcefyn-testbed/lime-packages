@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # MIT License
 
@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 module: linux_bridge_port
 short_description: Manage Linux bridge ports
 requirements: [ brctl ]
@@ -44,118 +44,109 @@ options:
         choices: [ present, absent ]
         description:
             - Whether the port should exist
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 # create port eth0 on bridge br-int
 - linux_bridge_port: bridge=br-int port=eth0 state=present
-'''
+"""
 
-class LinuxPort (object) :
-    def __init__ (self, module) :
+
+class LinuxPort(object):
+    def __init__(self, module):
         self.module = module
-        self.bridge = module.params['bridge']
-        self.port = module.params['port']
-        self.state = module.params['state']
+        self.bridge = module.params["bridge"]
+        self.port = module.params["port"]
+        self.state = module.params["state"]
 
         return
 
-    def ip(self, cmd) :
+    def ip(self, cmd):
+        return self.module.run_command(["ip"] + cmd)
 
-        return self.module.run_command (['ip'] + cmd)
-
-
-    def port_exists (self) :
-
+    def port_exists(self):
         syspath = "/sys/class/net/%s/brif/%s" % (self.bridge, self.port)
 
-        if os.path.exists (syspath) :
+        if os.path.exists(syspath):
             return True
-        else :
+        else:
             return False
 
         return
 
-    def addif (self) :
+    def addif(self):
+        (rc, out, err) = self.ip(["link", "set", self.port, "master", self.bridge])
 
-        (rc, out, err) = self.ip (['link', 'set', self.port,'master',self.bridge])
-        
-        if rc != 0 :
-            raise Exception (err)
-
-        return
-
-
-    def delif (self) :
-
-        (rc, out, err) = self.ip (['link', 'del', self.port,'dev',self.bridge])
-        
-        if rc != 0 :
-            raise Exception (err)
+        if rc != 0:
+            raise Exception(err)
 
         return
 
+    def delif(self):
+        (rc, out, err) = self.ip(["link", "del", self.port, "dev", self.bridge])
 
-    def check (self) :
+        if rc != 0:
+            raise Exception(err)
 
-        try :
-            if self.state == 'absent' and self.port_exists () :
+        return
+
+    def check(self):
+        try:
+            if self.state == "absent" and self.port_exists():
                 changed = True
-            elif self.state == 'present' and not self.port_exists () :
+            elif self.state == "present" and not self.port_exists():
                 changed = True
-            else :
+            else:
                 changed = False
-        except Exception as e :
-            self.module.fail_json (msg = str (e))
+        except Exception as e:
+            self.module.fail_json(msg=str(e))
 
-        self.module.exit_json (changed = changed)
+        self.module.exit_json(changed=changed)
 
         return
 
-    
-    def run (self) :
-
+    def run(self):
         changed = False
 
-        try :
-            if self.state == 'absent' :
-                if self.port_exists () :
-                    self.delif ()
+        try:
+            if self.state == "absent":
+                if self.port_exists():
+                    self.delif()
                     changed = True
 
-            elif self.state == 'present' :
-                if not self.port_exists () :
-                    self.addif ()
+            elif self.state == "present":
+                if not self.port_exists():
+                    self.addif()
                     changed = True
 
-        except Exception as e :
-            self.module.fail_json (msg = str (e))
+        except Exception as e:
+            self.module.fail_json(msg=str(e))
 
-        self.module.exit_json (changed = changed)
+        self.module.exit_json(changed=changed)
 
         return
 
-def main () :
 
-    module = AnsibleModule (
-        argument_spec = {
-            'bridge' : { 'required': True},
-            'port' : {'required' : True},
-            'state' : {'default' : 'present', 
-                       'choices' : ['present', 'absent']}
-            },
-        supports_check_mode = True,
-        )
+def main():
+    module = AnsibleModule(
+        argument_spec={
+            "bridge": {"required": True},
+            "port": {"required": True},
+            "state": {"default": "present", "choices": ["present", "absent"]},
+        },
+        supports_check_mode=True,
+    )
 
-    port = LinuxPort (module)
+    port = LinuxPort(module)
 
-    if module.check_mode :
-        port.check ()
-    else :
-        port.run ()
+    if module.check_mode:
+        port.check()
+    else:
+        port.run()
 
     return
 
 
 from ansible.module_utils.basic import *
-main ()
+
+main()

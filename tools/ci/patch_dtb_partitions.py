@@ -261,8 +261,8 @@ LINUX_UBI_MARKER = 'compatible = "linux,ubi"'
 # resolve to the new node without depending on a `__symbols__`
 # section that 24.10 does not emit.
 FACTORY_CELLS: tuple[tuple[str, str], ...] = (
-    ("eeprom",  "0"),
-    ("eeprom",  "5000"),
+    ("eeprom", "0"),
+    ("eeprom", "5000"),
     ("macaddr", "7fff4"),
     ("macaddr", "7fffa"),
 )
@@ -317,7 +317,7 @@ def _find_snand_partitions(dts: str) -> tuple[int, int, str] | None:
         # leaves the surrounding DTS clean.
         if tail_end < len(dts) and dts[tail_end] == "\n":
             tail_end += 1
-        block = dts[hdr.start():tail_end]
+        block = dts[hdr.start() : tail_end]
         if LINUX_UBI_MARKER in block:
             matches.append((hdr.start(), tail_end, hdr.group(1)))
     if not matches:
@@ -436,8 +436,7 @@ def patch_dts(dts: str) -> tuple[str, str]:
     if "__PHANDLE_" in template:
         leftover = re.findall(r"__PHANDLE_[\w]+__", template)
         raise RuntimeError(
-            "Internal: unsubstituted placeholders left in template: "
-            f"{leftover}"
+            f"Internal: unsubstituted placeholders left in template: {leftover}"
         )
     # The original block we replace ends with `;` (statement
     # terminator), so the template must do the same. Sanity-check
@@ -467,10 +466,12 @@ def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(
         description="Rewrite linksys_e8450-ubi DTB partitioning to layout 1.0",
     )
-    p.add_argument("--in", dest="in_path", default=None,
-                   help="DTS input path (default: stdin)")
-    p.add_argument("--out", dest="out_path", default=None,
-                   help="DTS output path (default: stdout)")
+    p.add_argument(
+        "--in", dest="in_path", default=None, help="DTS input path (default: stdin)"
+    )
+    p.add_argument(
+        "--out", dest="out_path", default=None, help="DTS output path (default: stdout)"
+    )
     args = p.parse_args(argv)
 
     try:

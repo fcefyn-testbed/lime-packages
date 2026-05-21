@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # MIT License
 
@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: linux_bridge
 short_description: Manage Linux bridges
@@ -41,121 +41,108 @@ options:
         choices: [ present, absent ]
         description:
             - Whether the bridge should exist
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 # Create bridge a named br-int
 - linux_bridge: bridge=br-int state=present
-'''
+"""
 
-class LinuxBridge (object) :
 
-    def __init__ (self, module) :
+class LinuxBridge(object):
+    def __init__(self, module):
         self.module = module
-        self.bridge = module.params['bridge']
-        self.state = module.params['state']
+        self.bridge = module.params["bridge"]
+        self.state = module.params["state"]
         return
 
-    def ip(self, cmd) : 
+    def ip(self, cmd):
+        return self.module.run_command(["ip"] + cmd)
 
-        return self.module.run_command (['ip'] + cmd) 
-
-
-    def br_exists (self) :
-        
+    def br_exists(self):
         syspath = "/sys/class/net/" + self.bridge
-        if os.path.exists (syspath) :
+        if os.path.exists(syspath):
             return True
-        else :
+        else:
             return False
 
-        return 
+        return
 
+    def addbr(self):
+        (rc, out, err) = self.ip(["link", "add", "name", self.bridge, "type", "bridge"])
 
-    def addbr (self) :
-    
-        (rc, out, err) = self.ip (['link', 'add', 'name', self.bridge, 'type', 'bridge'])
+        if rc != 0:
+            raise Exception(err)
 
-        if rc != 0 :
-            raise Exception (err)
-
-        self.ip(['link','set','up', self.bridge]) 
+        self.ip(["link", "set", "up", self.bridge])
 
         return
 
+    def delbr(self):
+        self.ip(["link", "set", "down", self.bridge])
 
-    def delbr (self) :
-        
-        self.ip(['link','set', 'down', self.bridge]) 
-        
-        (rc, out, err) = self.ip (['link', 'del', self.bridge])
+        (rc, out, err) = self.ip(["link", "del", self.bridge])
 
-        if rc != 0 :
-            raise Exception (err)
-    
+        if rc != 0:
+            raise Exception(err)
+
         return
 
-
-    def check (self) :
-
-        try :
-            if self.state == 'absent' and self.br_exists () :
+    def check(self):
+        try:
+            if self.state == "absent" and self.br_exists():
                 changed = True
-            elif self.state == 'present' and not self.br_exists () :
+            elif self.state == "present" and not self.br_exists():
                 changed = True
-            else :
+            else:
                 changed = False
 
-        except Exception as e :
-            self.module.fail_json (msg = str (e))
+        except Exception as e:
+            self.module.fail_json(msg=str(e))
 
-        self.module.exit_json (changed = changed)
+        self.module.exit_json(changed=changed)
 
         return
-        
 
-    def run (self) :
-
+    def run(self):
         changed = False
 
-        try :
-            if self.state == 'absent' and self.br_exists () :
-                self.delbr ()
+        try:
+            if self.state == "absent" and self.br_exists():
+                self.delbr()
                 changed = True
 
-            elif self.state == 'present' and not self.br_exists () :
-                self.addbr ()
+            elif self.state == "present" and not self.br_exists():
+                self.addbr()
                 changed = True
 
-        except Exception as e :
-            self.module.fail_json (msg = str (e))
+        except Exception as e:
+            self.module.fail_json(msg=str(e))
 
-
-        self.module.exit_json (changed = changed)
+        self.module.exit_json(changed=changed)
 
         return
-            
 
-def main () :
 
-    module = AnsibleModule (
-        argument_spec = {
-            'bridge' : { 'required' : True },
-            'state' : {'default' : 'present', 
-                       'choices' : ['present', 'absent']
-                       }
-            },
-        supports_check_mode = True,
-        )
+def main():
+    module = AnsibleModule(
+        argument_spec={
+            "bridge": {"required": True},
+            "state": {"default": "present", "choices": ["present", "absent"]},
+        },
+        supports_check_mode=True,
+    )
 
-    br = LinuxBridge (module)
+    br = LinuxBridge(module)
 
-    if module.check_mode :
-        br.check ()
-    else :
-        br.run ()
+    if module.check_mode:
+        br.check()
+    else:
+        br.run()
 
     return
 
+
 from ansible.module_utils.basic import *
-main ()
+
+main()

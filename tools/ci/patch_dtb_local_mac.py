@@ -153,8 +153,9 @@ NVMEM_MAC_ANCHOR_RE = re.compile(
 )
 
 
-def _inject_local_mac(text: str, node_re: re.Pattern, classify,
-                      label: str, *, multi: bool = True) -> tuple[str, int]:
+def _inject_local_mac(
+    text: str, node_re: re.Pattern, classify, label: str, *, multi: bool = True
+) -> tuple[str, int]:
     """Walk every node header matched by `node_re`, scope each body to its
     matching brace pair, and inject a `local-mac-address` property
     immediately after the `nvmem-cell-names = "mac-address";` line in the
@@ -193,10 +194,14 @@ def _inject_local_mac(text: str, node_re: re.Pattern, classify,
         # forbids `nvmem-cell-names = "mac-address"` from matching, since
         # that string carries `mac-address` as the cell *name*, not as
         # an actual MAC property.
-        if re.search(r"(?<!cell-names = \")\b(?:local-mac-address|mac-address)\s*=", block):
-            print(f"[patch_dtb_local_mac] {label} at offset {header_start}: "
-                  "already has mac-address/local-mac-address, skipping",
-                  file=sys.stderr)
+        if re.search(
+            r"(?<!cell-names = \")\b(?:local-mac-address|mac-address)\s*=", block
+        ):
+            print(
+                f"[patch_dtb_local_mac] {label} at offset {header_start}: "
+                "already has mac-address/local-mac-address, skipping",
+                file=sys.stderr,
+            )
             continue
         seed = classify(block, m)
         if not seed:
@@ -206,10 +211,12 @@ def _inject_local_mac(text: str, node_re: re.Pattern, classify,
             # classify already required the anchor string; if we get here
             # the DTS shape changed (e.g. anchor split across lines) and
             # we'd rather fail loudly than ship a half-patched DTB.
-            print(f"[patch_dtb_local_mac] {label} (seed={seed}): "
-                  "anchor `nvmem-cell-names = \"mac-address\";` not found "
-                  "on its own line - refusing to guess insertion point",
-                  file=sys.stderr)
+            print(
+                f"[patch_dtb_local_mac] {label} (seed={seed}): "
+                'anchor `nvmem-cell-names = "mac-address";` not found '
+                "on its own line - refusing to guess insertion point",
+                file=sys.stderr,
+            )
             continue
         indent = anchor_m.group(1)
         # anchor_m.end() points just past the trailing `\n` of the anchor
@@ -219,8 +226,11 @@ def _inject_local_mac(text: str, node_re: re.Pattern, classify,
         prop = f"{indent}local-mac-address = [{mac}];\n"
         out = out[:insert_at] + prop + out[insert_at:]
         count += 1
-        print(f"[patch_dtb_local_mac] {label} (seed={seed}): inserted "
-              f"local-mac-address = [{mac}]", file=sys.stderr)
+        print(
+            f"[patch_dtb_local_mac] {label} (seed={seed}): inserted "
+            f"local-mac-address = [{mac}]",
+            file=sys.stderr,
+        )
         if not multi:
             break
     return out, count
@@ -246,8 +256,7 @@ def patch_dts(dts: str, profile: str) -> tuple[str, int]:
             return None
         return f"{profile}-gmac{m.group(1)}"
 
-    dts, c = _inject_local_mac(dts, mac_re, _classify_eth_mac,
-                               label="mediatek,eth-mac")
+    dts, c = _inject_local_mac(dts, mac_re, _classify_eth_mac, label="mediatek,eth-mac")
     total += c
 
     # 2) DSA switch ports (`port@<unit>`) with
@@ -261,8 +270,7 @@ def patch_dts(dts: str, profile: str) -> tuple[str, int]:
             return None
         return f"{profile}-port{m.group(1)}"
 
-    dts, c = _inject_local_mac(dts, port_re, _classify_mac_port,
-                               label="dsa-port")
+    dts, c = _inject_local_mac(dts, port_re, _classify_mac_port, label="dsa-port")
     total += c
 
     return dts, total
@@ -271,15 +279,18 @@ def patch_dts(dts: str, profile: str) -> tuple[str, int]:
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(
         description="Inject local-mac-address into MAC-bearing DTS nodes "
-                    "so the kernel skips the broken UBI-NVMEM lookup.",
+        "so the kernel skips the broken UBI-NVMEM lookup.",
     )
     p.add_argument("profile", help="OpenWrt profile name; used as MAC seed")
-    p.add_argument("--in", dest="in_path", default=None,
-                   help="DTS input path (default: stdin)")
-    p.add_argument("--out", dest="out_path", default=None,
-                   help="DTS output path (default: stdout)")
-    p.add_argument("--require-patch", action="store_true",
-                   help="Exit 2 if no node was patched")
+    p.add_argument(
+        "--in", dest="in_path", default=None, help="DTS input path (default: stdin)"
+    )
+    p.add_argument(
+        "--out", dest="out_path", default=None, help="DTS output path (default: stdout)"
+    )
+    p.add_argument(
+        "--require-patch", action="store_true", help="Exit 2 if no node was patched"
+    )
     args = p.parse_args(argv)
 
     try:
@@ -293,14 +304,15 @@ def main(argv: list[str]) -> int:
         return 1
 
     patched, count = patch_dts(src, args.profile)
-    print(f"[patch_dtb_local_mac] total nodes patched: {count}",
-          file=sys.stderr)
+    print(f"[patch_dtb_local_mac] total nodes patched: {count}", file=sys.stderr)
 
     if count == 0 and args.require_patch:
-        print("[patch_dtb_local_mac] --require-patch: no nodes matched, "
-              "this means the DTS no longer contains the GMAC / WAN "
-              "patterns we know how to patch. Update this script.",
-              file=sys.stderr)
+        print(
+            "[patch_dtb_local_mac] --require-patch: no nodes matched, "
+            "this means the DTS no longer contains the GMAC / WAN "
+            "patterns we know how to patch. Update this script.",
+            file=sys.stderr,
+        )
         return 2
 
     try:
