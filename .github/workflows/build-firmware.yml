@@ -41,6 +41,11 @@ on:
         required: false
         type: boolean
         default: false
+      demo_fail:
+        description: "[DEMO] Force test failure to trigger healthcheck issue creation"
+        required: false
+        type: boolean
+        default: false
   schedule:
     # Daily lab sweep at 06:00 UTC (03:00 ART).
     - cron: "0 6 * * *"
@@ -561,6 +566,12 @@ jobs:
           echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
           echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
           echo "Locked $PLACE for device=${{ matrix.device }}"
+
+      - name: "[DEMO] Intentional failure to generate healthcheck issues"
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.demo_fail == 'true'
+        run: |
+          echo "::error::Intentional failure to trigger healthcheck issue creation (demo run)"
+          exit 1
 
       - name: Run single-node LibreMesh tests
         working-directory: libremesh-tests
