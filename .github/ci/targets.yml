@@ -1,4 +1,6 @@
 # CI targets for the build-firmware workflow.
+# Each entry defines a device profile, its architecture, and optional overrides
+# for packages, feeds, and build flags. See docs for adding new devices.
 openwrt_releases:
   - "24.10.6"
   - "25.12.2"
