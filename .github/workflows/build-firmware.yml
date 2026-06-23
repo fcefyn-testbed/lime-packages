@@ -586,7 +586,7 @@ jobs:
           LG_PLACE: ${{ env.LG_PLACE }}
         run: |
           set +e
-          REPORT=$(uv run labgrid-client -p "$LG_PLACE" ssh -- lime-report.sh -m 2>/dev/null | head -c 50000)
+          REPORT=$(uv run labgrid-client -p "$LG_PLACE" ssh -- lime-report -m 2>/dev/null | head -c 50000)
           if [ -z "$REPORT" ]; then
             REPORT="_Could not collect lime-report (device unreachable or command not found)._"
           fi
