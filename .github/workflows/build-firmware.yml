@@ -544,7 +544,14 @@ jobs:
         run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # v10.0.1 tolerates transient manifest-fetch failures with up to 3
+        # retries and progressive backoff (astral-sh/setup-uv#1016). Prior v7
+        # fetched raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson
+        # exactly once, and a single 503 (Backend.max_conn) from that endpoint
+        # killed the whole physical-DUT job before any test ran. v10's only
+        # breaking change is `enable-cache: auto`, which this workflow does not
+        # set, so the bump is behavior-preserving.
+        uses: astral-sh/setup-uv@v10
 
       - name: Sync libremesh-tests environment
         run: |
@@ -785,7 +792,14 @@ jobs:
         run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # v10.0.1 tolerates transient manifest-fetch failures with up to 3
+        # retries and progressive backoff (astral-sh/setup-uv#1016). Prior v7
+        # fetched raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson
+        # exactly once, and a single 503 (Backend.max_conn) from that endpoint
+        # killed the whole physical-DUT job before any test ran. v10's only
+        # breaking change is `enable-cache: auto`, which this workflow does not
+        # set, so the bump is behavior-preserving.
+        uses: astral-sh/setup-uv@v10
 
       - name: Sync libremesh-tests environment
         run: cd libremesh-tests && uv sync
@@ -888,7 +902,14 @@ jobs:
         run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # v10.0.1 tolerates transient manifest-fetch failures with up to 3
+        # retries and progressive backoff (astral-sh/setup-uv#1016). Prior v7
+        # fetched raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson
+        # exactly once, and a single 503 (Backend.max_conn) from that endpoint
+        # killed the whole physical-DUT job before any test ran. v10's only
+        # breaking change is `enable-cache: auto`, which this workflow does not
+        # set, so the bump is behavior-preserving.
+        uses: astral-sh/setup-uv@v10
 
       - name: Sync libremesh-tests environment
         run: cd libremesh-tests && uv sync
@@ -980,7 +1001,14 @@ jobs:
           sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # v10.0.1 tolerates transient manifest-fetch failures with up to 3
+        # retries and progressive backoff (astral-sh/setup-uv#1016). Prior v7
+        # fetched raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson
+        # exactly once, and a single 503 (Backend.max_conn) from that endpoint
+        # killed the whole physical-DUT job before any test ran. v10's only
+        # breaking change is `enable-cache: auto`, which this workflow does not
+        # set, so the bump is behavior-preserving.
+        uses: astral-sh/setup-uv@v10
 
       - name: Sync libremesh-tests environment
         run: |
@@ -1112,7 +1140,14 @@ jobs:
           vwifi-server --help || vwifi-server -h || true
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # v10.0.1 tolerates transient manifest-fetch failures with up to 3
+        # retries and progressive backoff (astral-sh/setup-uv#1016). Prior v7
+        # fetched raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson
+        # exactly once, and a single 503 (Backend.max_conn) from that endpoint
+        # killed the whole physical-DUT job before any test ran. v10's only
+        # breaking change is `enable-cache: auto`, which this workflow does not
+        # set, so the bump is behavior-preserving.
+        uses: astral-sh/setup-uv@v10
 
       - name: Sync libremesh-tests environment
         run: |
