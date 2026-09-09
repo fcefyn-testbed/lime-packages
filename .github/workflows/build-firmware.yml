@@ -562,6 +562,12 @@ jobs:
 
       - name: Lock labgrid place
         working-directory: libremesh-tests
+        env:
+          # LG_PLACE must be available before labgrid-client parses LG_ENV so
+          # that !template "$LG_PLACE" in target YAMLs resolves correctly.
+          # (lab_stage_firmware.sh may override LG_ENV to a -dual-tftp variant
+          # that still references $LG_PLACE in RemotePlace.)
+          LG_PLACE: labgrid-fcefyn-${{ matrix.place }}
         run: |
           set -euo pipefail
           echo "LG_PROXY=labgrid-fcefyn" >> "$GITHUB_ENV"
